@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, FileRejection } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -19,12 +19,12 @@ export function FileUpload({
   onFileSelect,
   isUploading = false,
   maxSize = 10,
-  acceptedTypes = ["application/pdf"],
+  acceptedTypes = ["application/pdf"], // eslint-disable-line @typescript-eslint/no-unused-vars
 }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[], rejectedFiles: any[]) => {
+    (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
       // Handle rejected files
       if (rejectedFiles.length > 0) {
         const rejection = rejectedFiles[0];
