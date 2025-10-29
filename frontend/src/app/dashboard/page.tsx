@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useSession } from "next-auth/react";
@@ -10,7 +11,6 @@ import { UploadSection } from "@/components/dashboard/upload-section";
 import { FilesSection } from "@/components/dashboard/files-section";
 import { ResumeModal } from "@/components/dashboard/resume-modal";
 import toast from "react-hot-toast";
-import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Zap } from "lucide-react";
 
 interface FileItem {
@@ -175,8 +175,8 @@ export default function DashboardPage() {
             </h1>
             <p className="text-white">
               <p className="text-m">
-                Our advanced AI analyzes your PDF and extracts structured
-                data automatically
+                Our advanced AI analyzes your PDF and extracts structured data
+                automatically
               </p>
             </p>
           </div>

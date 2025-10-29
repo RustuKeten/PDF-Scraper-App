@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { signIn } from "next-auth/react";
@@ -13,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import toast from "react-hot-toast";
-import { Mail, UserPlus, LogIn, Eye, EyeOff } from "lucide-react";
+import { UserPlus, LogIn, Eye, EyeOff } from "lucide-react";
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);

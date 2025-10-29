@@ -57,7 +57,7 @@ cd PDF_Scraper_App
 
 ### 2. Set Up Supabase
 
-1. Create a Supabase account and project at https://supabase.com
+1. Create a Supabase account and project at <https://supabase.com>
 2. Get your credentials:
    - Project URL
    - Anon key
