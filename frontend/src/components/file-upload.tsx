@@ -5,7 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Upload, File, X } from "lucide-react";
+import { Upload, File, X, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface FileUploadProps {
@@ -70,7 +70,7 @@ export function FileUpload({
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full bg-gray-800 border-gray-600 shadow-lg">
       <CardContent className="p-6">
         {!selectedFile ? (
           <div
@@ -79,31 +79,42 @@ export function FileUpload({
               border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
               ${
                 isDragActive
-                  ? "border-primary bg-primary/5"
-                  : "border-gray-300 hover:border-gray-400"
+                  ? "border-blue-400 bg-blue-900/20"
+                  : "border-gray-500 hover:border-blue-400 hover:bg-blue-900/10"
               }
               ${isUploading ? "pointer-events-none opacity-50" : ""}
             `}
           >
             <input {...getInputProps()} />
-            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">
+            <div className="mx-auto w-12 h-12 bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+              <Upload className="h-6 w-6 text-blue-400" />
+            </div>
+            <p className="text-lg font-semibold text-white mb-2">
               {isDragActive ? "Drop the PDF here" : "Upload a PDF file"}
             </p>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-300 mb-4">
               Drag and drop or click to select
             </p>
-            <p className="text-xs text-gray-400">
+            {/* Upload Guidelines */}
+            <div className="text-xs text-gray-400 bg-gray-700 rounded-md px-3 py-2 inline-block text-left">
               Maximum file size: {maxSize}MB
-            </p>
+              <br />
+              Supported format: PDF only
+              <br />
+              Text-based PDFs work best
+              <br />
+              Each upload costs 100 credits
+            </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-green-900/20 border border-green-600 rounded-lg">
             <div className="flex items-center space-x-3">
-              <File className="h-8 w-8 text-red-500" />
+              <FileText className="h-8 w-8 text-green-400" />
               <div>
-                <p className="font-medium text-gray-900">{selectedFile.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-semibold text-green-300">
+                  {selectedFile.name}
+                </p>
+                <p className="text-sm text-green-400">
                   {formatFileSize(selectedFile.size)}
                 </p>
               </div>
@@ -113,6 +124,7 @@ export function FileUpload({
               size="sm"
               onClick={removeFile}
               disabled={isUploading}
+              className="text-green-400 hover:text-green-300 hover:bg-green-900/30"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -120,9 +132,11 @@ export function FileUpload({
         )}
 
         {isUploading && (
-          <div className="mt-4 flex items-center justify-center space-x-2">
+          <div className="mt-4 flex items-center justify-center space-x-2 p-4 bg-blue-900/20 border border-blue-600 rounded-lg">
             <LoadingSpinner size="sm" />
-            <span className="text-sm text-gray-600">Processing PDF...</span>
+            <span className="text-sm font-medium text-blue-300">
+              Processing PDF...
+            </span>
           </div>
         )}
       </CardContent>

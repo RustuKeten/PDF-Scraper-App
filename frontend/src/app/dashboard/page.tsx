@@ -3,200 +3,217 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { FileUpload } from "@/components/file-upload";
 import { Navigation } from "@/components/navigation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { FileText, Upload, CreditCard, Crown, Zap } from "lucide-react";
+import { StatsSection } from "@/components/dashboard/stats-section";
+import { UploadSection } from "@/components/dashboard/upload-section";
+import { FilesSection } from "@/components/dashboard/files-section";
+import { ResumeModal } from "@/components/dashboard/resume-modal";
+import toast from "react-hot-toast";
+import { Card, CardContent } from "@/components/ui/card";
+import { Brain, Zap } from "lucide-react";
+
+interface FileItem {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  status: string;
+  uploadedAt: string;
+  hasResumeData: boolean;
+}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
-  const [filesProcessed, setFilesProcessed] = useState(0);
+  const [files, setFiles] = useState<FileItem[]>([]);
   const [creditsRemaining, setCreditsRemaining] = useState(1000);
   const [planType, setPlanType] = useState("FREE");
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [resumeData, setResumeData] = useState<any>(null);
 
+  // Fetch user data on mount
   useEffect(() => {
-    if (status === "loading") return; // Still loading
+    if (status === "loading") return;
     if (!session) {
       router.push("/auth/signin");
+      return;
     }
+    fetchFiles();
+    fetchCredits();
   }, [session, status, router]);
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  // Poll for file updates while processing
+  useEffect(() => {
+    if (
+      files.some((f) => f.status === "uploaded" || f.status === "processing")
+    ) {
+      const interval = setInterval(() => {
+        fetchFiles();
+        fetchCredits();
+      }, 3000); // Poll every 3 seconds
+      return () => clearInterval(interval);
+    }
+  }, [files]);
 
-  if (!session) {
-    return null; // Will redirect
-  }
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch("/api/files");
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files || []);
+      }
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCredits = async () => {
+    try {
+      const response = await fetch("/api/files/credits");
+      if (response.ok) {
+        const data = await response.json();
+        setCreditsRemaining(data.credits || 1000);
+        setPlanType(data.planType || "FREE");
+      }
+    } catch (error) {
+      console.error("Error fetching credits:", error);
+    }
+  };
 
   const handleFileSelect = async (file: File) => {
     setIsUploading(true);
     try {
-      // TODO: Implement file upload logic
-      console.log("Selected file:", file);
-      // Simulate upload process
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    } catch (error) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/files/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      toast.success("File uploaded successfully! Processing...");
+      await fetchFiles();
+      await fetchCredits();
+    } catch (error: any) {
       console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload file");
     } finally {
       setIsUploading(false);
     }
   };
 
+  const handleViewResumeData = async (fileId: string) => {
+    try {
+      const response = await fetch(`/api/files/${fileId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setResumeData(data.file.resumeData);
+        setSelectedFile(fileId);
+      } else {
+        toast.error("Failed to load resume data");
+      }
+    } catch (error) {
+      console.error("Error fetching resume data:", error);
+      toast.error("Failed to load resume data");
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedFile(null);
+    setResumeData(null);
+  };
+
+  if (status === "loading" || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null; // Will redirect to signin
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation currentPage="dashboard" />
+      <Navigation />
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, {session.user?.name?.split(" ")[0] || "User"}!
+      {/* AI Processing Info - Top Section */}
+      <div className="bg-gradient-to-r from-purple-100 to-blue-100 border-b border-purple-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-start space-x-3">
+            <div className="flex items-center space-x-2">
+              <Brain className="h-6 w-6 text-purple-600" />
+              <Zap className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-black text-lg">
+                AI-Powered PDF Extraction
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-8">
+          {/* Welcome Header */}
+          <div className="text-center bg-gray-900 rounded-lg shadow-lg border border-gray-700 p-6">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Welcome back, {session.user?.name || session.user?.email}!
             </h1>
-            <p className="text-gray-600">
-              Upload your PDF files to extract structured data using AI
+            <p className="text-white">
+              <p className="text-m">
+                Our advanced AI analyzes your PDF and extracts structured
+                data automatically
+              </p>
             </p>
           </div>
 
-          {/* Upload Section */}
-          <div className="mb-8">
-            <Card className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors">
-              <CardHeader className="text-center">
-                <CardTitle className="flex items-center justify-center space-x-2 text-xl">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Upload className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <span className="text-gray-900">Upload PDF File</span>
-                </CardTitle>
-                <CardDescription className="text-gray-600 text-base">
-                  Upload a PDF file up to 10MB to extract structured resume data
-                  using AI
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FileUpload
-                  onFileSelect={handleFileSelect}
-                  isUploading={isUploading}
-                  maxSize={10}
-                />
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="border-l-4 border-l-blue-500">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
-                      Files Processed
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {filesProcessed}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <StatsSection
+            filesCount={files.length}
+            creditsRemaining={creditsRemaining}
+            planType={planType}
+          />
 
-            <Card className="border-l-4 border-l-green-500">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CreditCard className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
-                      Credits Remaining
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {creditsRemaining.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Upload Section */}
+          <UploadSection
+            onFileSelect={handleFileSelect}
+            isUploading={isUploading}
+          />
 
-            <Card className="border-l-4 border-l-purple-500">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    {planType === "FREE" ? (
-                      <Zap className="h-6 w-6 text-purple-600" />
-                    ) : (
-                      <Crown className="h-6 w-6 text-purple-600" />
-                    )}
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
-                      Current Plan
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {planType}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Files Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-xl">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <FileText className="h-5 w-5 text-gray-600" />
-                </div>
-                <span className="text-gray-900">Recent Files</span>
-              </CardTitle>
-              <CardDescription className="text-gray-600">
-                Your recently uploaded and processed PDF files
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <FileText className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No files uploaded yet
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Upload your first PDF file to see it appear here
-                </p>
-                <Button
-                  onClick={() =>
-                    document.querySelector('input[type="file"]')?.click()
-                  }
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Your First File
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Files Section */}
+          <FilesSection
+            files={files}
+            loading={loading}
+            onViewResumeData={handleViewResumeData}
+          />
         </div>
       </main>
+
+      {/* Resume Data Modal */}
+      <ResumeModal
+        isOpen={!!selectedFile}
+        onClose={handleCloseModal}
+        resumeData={resumeData}
+        fileName={
+          selectedFile
+            ? files.find((f) => f.id === selectedFile)?.fileName
+            : undefined
+        }
+      />
     </div>
   );
 }

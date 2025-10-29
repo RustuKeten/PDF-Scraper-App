@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PDF Scraper App",
-  description: "Upload and extract structured data from PDF files using AI",
+  title: "PDF Extractor AI",
+  description: "Advanced AI-powered PDF data extraction and resume parsing",
   icons: {
     icon: [
       { url: "/favicon-16x16.svg", sizes: "16x16", type: "image/svg+xml" },

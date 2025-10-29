@@ -37,10 +37,10 @@ export default function Home() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            PDF Scraper App
+            PDF Extractor
           </CardTitle>
           <CardDescription className="text-center">
-            Upload and extract structured data from PDF files using AI
+            Advanced AI-powered PDF data extraction and resume parsing
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
