@@ -2,42 +2,42 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
-    container_name: my_postgres
+    container_name: pdf_scraper_postgres
     restart: always
     ports:
-      - "5432:5432"
+      - "5433:5433"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mydb
+      POSTGRES_DB: pdf_scraper_db
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   backend:
     build: ./backend
-    container_name: my_backend
+    container_name: pdf_scraper_backend
     command: npm run start:dev
     volumes:
       - ./backend:/app
     ports:
-      - "3001:3000"
+      - "3003:3003"
     environment:
       DB_HOST: postgres
-      DB_PORT: 5432
+      DB_PORT: 5433
       DB_USER: postgres
       DB_PASS: postgres
-      DB_NAME: mydb
+      DB_NAME: pdf_scraper_db
     depends_on:
       - postgres
 
   frontend:
     build: ./frontend
-    container_name: my_frontend
+    container_name: pdf_scraper_frontend
     command: npm run dev
     volumes:
       - ./frontend:/app
     ports:
-      - "3000:3000"
+      - "3002:3002"
     depends_on:
       - backend
 
