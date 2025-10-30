@@ -2,51 +2,122 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-// PDF parsing disabled for testing - will implement later
-// import * as pdfParse from "pdf-parse";
-// OpenAI imports disabled for testing without API calls
-// import OpenAI from "openai";
-// import { ResumeData } from "@/types/resume";
-
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY,
-// });
+import { extractResumeData } from "@/lib/extractResumeData";
+import { promises as fs } from "fs";
+import { v4 as uuidv4 } from "uuid";
+import PDFParser from "pdf2json";
 
 // For files > 4MB, we'll use a direct client-side upload approach
 // Vercel serverless functions have a 4.5MB payload limit
 const VERCEL_PAYLOAD_LIMIT = 4 * 1024 * 1024; // 4MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const CREDITS_REQUIRED = 100;
 
 /**
- * Extract text from PDF buffer - Simplified for testing
+ * Extract text from PDF using pdf2json (serverless-friendly approach)
+ * Works by writing to /tmp and reading from file system
  */
 async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
+  const fileName = uuidv4();
+  const tempFilePath = `/tmp/${fileName}.pdf`;
+
   try {
-    // For testing, return a mock text instead of parsing PDF
-    // This avoids the pdf-parse library issues in serverless environment
-    console.log(`Processing PDF buffer of size: ${pdfBuffer.length} bytes`);
+    console.log(
+      `[PDF Extraction] Writing PDF to temp file: ${tempFilePath} (${pdfBuffer.length} bytes)`
+    );
 
-    // Return mock text for testing
-    const mockText = `Mock PDF Text Extraction
-File Size: ${pdfBuffer.length} bytes
-Extracted at: ${new Date().toISOString()}
+    // Write PDF buffer to temp file (Vercel provides /tmp directory)
+    await fs.writeFile(tempFilePath, pdfBuffer);
 
-This is a test extraction without actual PDF parsing.
-In production, this would contain the actual PDF text content.
+    // Create PDF parser instance - using exact same approach as reference app
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfParser = new (PDFParser as any)(null, 1);
 
-For now, we're testing the upload and database storage functionality.`;
+    // Extract text using promise-based approach
+    const parsedText = await new Promise<string>((resolve, reject) => {
+      let resolved = false;
 
-    return mockText;
+      pdfParser.on("pdfParser_dataError", (errData: unknown) => {
+        const errorData = errData as { parserError?: string };
+        console.error("[PDF Extraction] Parsing error:", errorData.parserError);
+        if (!resolved) {
+          resolved = true;
+          reject(
+            new Error(
+              `PDF parsing failed: ${errorData.parserError || "Unknown error"}`
+            )
+          );
+        }
+      });
+
+      pdfParser.on("pdfParser_dataReady", () => {
+        const extractedText = pdfParser.getRawTextContent();
+        console.log(
+          `[PDF Extraction] Extracted text length: ${
+            extractedText?.length || 0
+          } characters`
+        );
+        console.log(
+          `[PDF Extraction] First 200 chars: ${
+            extractedText?.substring(0, 200) || "empty"
+          }`
+        );
+
+        if (!resolved) {
+          resolved = true;
+          resolve(extractedText || "");
+        }
+      });
+
+      console.log(`[PDF Extraction] Loading PDF from: ${tempFilePath}`);
+      pdfParser.loadPDF(tempFilePath);
+    });
+
+    // Clean up temp file
+    try {
+      await fs.unlink(tempFilePath);
+      console.log(`[PDF Extraction] Cleaned up temp file: ${tempFilePath}`);
+    } catch (cleanupError) {
+      console.warn(
+        "[PDF Extraction] Failed to cleanup temp file:",
+        cleanupError
+      );
+    }
+
+    console.log(
+      `[PDF Extraction] Final extracted text length: ${parsedText?.length || 0}`
+    );
+
+    if (!parsedText || parsedText.trim().length < 20) {
+      console.warn(
+        `[PDF Extraction] Extracted text is too short (${
+          parsedText?.length || 0
+        } chars)`
+      );
+      throw new Error(
+        "PDF contains no extractable text. This might be an image-based PDF. Please ensure the PDF contains selectable text."
+      );
+    }
+
+    return parsedText.trim();
   } catch (error) {
-    console.error("Error in mock PDF extraction:", error);
-    throw new Error("Failed to extract text from PDF");
+    // Clean up temp file on error
+    try {
+      await fs.unlink(tempFilePath).catch(() => {
+        // Ignore cleanup errors
+      });
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    console.error("[PDF Extraction] Error extracting PDF text:", error);
+    throw new Error(
+      `Failed to extract text from PDF: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
-
-// OpenAI extraction function disabled for testing
-// async function extractResumeData(pdfText: string): Promise<ResumeData> {
-//   // ... OpenAI code commented out
-// }
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id;
 
-    // Check user credits (if implementing credit system)
+    // Check user credits
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { credits: true },
@@ -68,17 +139,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Skip credit check for testing without OpenAI
-    // const CREDITS_REQUIRED = 100;
-    // if (user.credits < CREDITS_REQUIRED) {
-    //   return NextResponse.json(
-    //     {
-    //       error: "Insufficient credits",
-    //       message: `You need ${CREDITS_REQUIRED} credits to process a file. You have ${user.credits} credits remaining.`,
-    //     },
-    //     { status: 402 }
-    //   );
-    // }
+    // Check if user has sufficient credits
+    if (user.credits < CREDITS_REQUIRED) {
+      return NextResponse.json(
+        {
+          error: "Insufficient credits",
+          message: `You need ${CREDITS_REQUIRED} credits to process a file. You have ${user.credits} credits remaining.`,
+        },
+        { status: 402 }
+      );
+    }
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -142,7 +212,7 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-      // Extract text from PDF
+      // Step 1: Extract text from PDF using pdf2json
       await prisma.resumeHistory.create({
         data: {
           userId: userId,
@@ -161,29 +231,25 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Skip OpenAI extraction for testing - just save raw text
+      // Step 2: Extract structured data using OpenAI (1 API call only!)
       await prisma.resumeHistory.create({
         data: {
           userId: userId,
           fileId: fileRecord.id,
           action: "extract",
           status: "pending",
-          message: "Saving raw PDF text (OpenAI disabled for testing)...",
+          message: "Processing with OpenAI...",
         },
       });
 
-      // Save raw text instead of structured data
-      const rawTextData = {
-        rawText: pdfText,
-        extractedAt: new Date().toISOString(),
-        note: "Raw text extraction - OpenAI processing disabled for testing",
-      };
+      const resumeData = await extractResumeData(pdfText);
 
+      // Save structured resume data
       await prisma.resumeData.create({
         data: {
           userId: userId,
           fileId: fileRecord.id,
-          data: JSON.parse(JSON.stringify(rawTextData)),
+          data: JSON.parse(JSON.stringify(resumeData)),
         },
       });
 
@@ -193,15 +259,15 @@ export async function POST(request: NextRequest) {
         data: { status: "completed" },
       });
 
-      // Skip credit deduction for testing
-      // await prisma.user.update({
-      //   where: { id: userId },
-      //   data: {
-      //     credits: {
-      //       decrement: CREDITS_REQUIRED,
-      //     },
-      //   },
-      // });
+      // Deduct credits for processing
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          credits: {
+            decrement: CREDITS_REQUIRED,
+          },
+        },
+      });
 
       // Create success history entry
       await prisma.resumeHistory.create({
@@ -210,7 +276,7 @@ export async function POST(request: NextRequest) {
           fileId: fileRecord.id,
           action: "extract",
           status: "success",
-          message: "Raw PDF text extracted successfully (OpenAI disabled)",
+          message: "Resume data extracted successfully",
         },
       });
 

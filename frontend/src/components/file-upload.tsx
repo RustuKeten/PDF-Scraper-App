@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDropzone, FileRejection } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,14 +12,12 @@ interface FileUploadProps {
   onFileSelect: (file: File) => void;
   isUploading?: boolean;
   maxSize?: number; // in MB
-  acceptedTypes?: string[];
 }
 
 export function FileUpload({
   onFileSelect,
   isUploading = false,
   maxSize = 10,
-  acceptedTypes = ["application/pdf"], // eslint-disable-line @typescript-eslint/no-unused-vars
 }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 

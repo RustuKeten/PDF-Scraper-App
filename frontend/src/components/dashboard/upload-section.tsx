@@ -36,7 +36,6 @@ export function UploadSection({
             onFileSelect={onFileSelect}
             isUploading={isUploading}
             maxSize={10}
-            acceptedTypes={["application/pdf"]}
           />
         </CardContent>
       </Card>
