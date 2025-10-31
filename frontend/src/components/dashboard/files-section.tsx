@@ -3,7 +3,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Clock, Eye, FolderOpen } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
+  FolderOpen,
+  Trash2,
+} from "lucide-react";
 
 interface FileItem {
   id: string;
@@ -18,12 +25,14 @@ interface FilesSectionProps {
   files: FileItem[];
   loading: boolean;
   onViewResumeData: (fileId: string) => void;
+  onFileDelete?: (fileId: string) => void;
 }
 
 export function FilesSection({
   files,
   loading,
   onViewResumeData,
+  onFileDelete,
 }: FilesSectionProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -87,10 +96,14 @@ export function FilesSection({
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-black mb-2">File History</h2>
-          <p className="text-black">Loading your uploaded files...</p>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-card-foreground mb-2">
+            File History
+          </h2>
+          <p className="text-sm sm:text-base text-card-foreground">
+            Loading your uploaded files...
+          </p>
         </div>
         <Card className="bg-gray-900 border-gray-700 shadow-lg">
           <CardContent className="p-6">
@@ -102,11 +115,13 @@ export function FilesSection({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-black mb-2">File History</h2>
-        <p className="text-black">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-card-foreground mb-2">
+          File History
+        </h2>
+        <p className="text-sm sm:text-base text-card-foreground">
           {files.length === 0
             ? "No files uploaded yet"
             : `${files.length} file${files.length === 1 ? "" : "s"} uploaded`}
@@ -132,32 +147,44 @@ export function FilesSection({
               key={file.id}
               className="bg-gray-900 border-gray-700 shadow-lg hover:shadow-xl transition-shadow"
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                     {getStatusIcon(file.status)}
-                    <div>
-                      <h3 className="font-medium text-white">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-white text-sm sm:text-base truncate">
                         {file.fileName}
                       </h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-400">
+                      <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-4 text-xs sm:text-sm text-gray-400">
                         <span>{formatFileSize(file.fileSize)}</span>
-                        <span>•</span>
-                        <span>{formatDate(file.uploadedAt)}</span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="break-all sm:break-normal">
+                          {formatDate(file.uploadedAt)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-end sm:justify-start space-x-2 sm:space-x-3 flex-shrink-0">
                     {getStatusBadge(file.status)}
                     {file.hasResumeData && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => onViewResumeData(file.id)}
-                        className="text-blue-400 border-blue-600 hover:bg-blue-900 hover:border-blue-500"
+                        className="text-blue-400 border-blue-600 hover:bg-blue-900 hover:border-blue-500 text-xs sm:text-sm"
                       >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View Data
+                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">View Data</span>
+                      </Button>
+                    )}
+                    {onFileDelete && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onFileDelete(file.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-900/30 text-xs sm:text-sm"
+                      >
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     )}
                   </div>

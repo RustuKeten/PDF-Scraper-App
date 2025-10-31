@@ -17,8 +17,10 @@ export function UploadSection({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-black mb-2">PDF File Upload</h2>
-        <p className="text-black">
+        <h2 className="text-xl sm:text-2xl font-bold text-card-foreground mb-2">
+          PDF File Upload
+        </h2>
+        <p className="text-sm sm:text-base text-card-foreground">
           Upload your resume or CV to extract structured data
         </p>
       </div>

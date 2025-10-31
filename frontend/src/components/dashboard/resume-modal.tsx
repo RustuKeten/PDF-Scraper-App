@@ -65,29 +65,30 @@ export function ResumeModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="bg-white max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
-          <CardTitle className="flex items-center gap-2 text-gray-900">
-            <FileText className="h-5 w-5 text-blue-600" />
-            Resume Data {fileName && `- ${fileName}`}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+      <Card className="bg-white max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4 border-b gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-900 text-sm sm:text-base">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+            <span className="break-words">Resume Data {fileName && `- ${fileName}`}</span>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopyJson}
-              className="text-gray-700 hover:bg-gray-100"
+              className="text-gray-700 hover:bg-gray-100 text-xs sm:text-sm"
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4 mr-1" />
-                  Copied!
+                  <Check className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copy JSON
+                  <Copy className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Copy JSON</span>
+                  <span className="sm:hidden">Copy</span>
                 </>
               )}
             </Button>
@@ -101,8 +102,8 @@ export function ResumeModal({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="overflow-y-auto max-h-[calc(90vh-120px)] p-0">
-          <pre className="bg-gray-900 text-gray-100 p-6 text-sm font-mono overflow-x-auto rounded-lg m-4">
+        <CardContent className="overflow-y-auto max-h-[calc(95vh-100px)] sm:max-h-[calc(90vh-120px)] p-0">
+          <pre className="bg-gray-900 text-gray-100 p-3 sm:p-6 text-xs sm:text-sm font-mono overflow-x-auto rounded-lg m-2 sm:m-4">
             {JSON.stringify(resumeData, null, 2)}
           </pre>
         </CardContent>

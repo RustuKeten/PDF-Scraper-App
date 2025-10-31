@@ -74,7 +74,7 @@ export function FileUpload({
           <div
             {...getRootProps()}
             className={`
-              border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+              border-2 border-dashed rounded-lg p-4 sm:p-6 md:p-8 text-center cursor-pointer transition-colors
               ${
                 isDragActive
                   ? "border-blue-400 bg-blue-900/20"
@@ -84,17 +84,17 @@ export function FileUpload({
             `}
           >
             <input {...getInputProps()} />
-            <div className="mx-auto w-12 h-12 bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-              <Upload className="h-6 w-6 text-blue-400" />
+            <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 bg-blue-900/30 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+              <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
             </div>
-            <p className="text-lg font-semibold text-white mb-2">
+            <p className="text-base sm:text-lg font-semibold text-white mb-2">
               {isDragActive ? "Drop the PDF here" : "Upload a PDF file"}
             </p>
-            <p className="text-sm text-gray-300 mb-4">
+            <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">
               Drag and drop or click to select
             </p>
             {/* Upload Guidelines */}
-            <div className="text-xs text-gray-400 bg-gray-700 rounded-md px-3 py-2 inline-block text-left">
+            <div className="text-xs text-gray-400 bg-gray-700 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 inline-block text-left">
               Maximum file size: {maxSize}MB
               <br />
               Supported format: PDF only
@@ -105,14 +105,14 @@ export function FileUpload({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between p-4 bg-green-900/20 border border-green-600 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <FileText className="h-8 w-8 text-green-400" />
-              <div>
-                <p className="font-semibold text-green-300">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-green-900/20 border border-green-600 rounded-lg gap-2">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-green-400 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-green-300 text-sm sm:text-base truncate">
                   {selectedFile.name}
                 </p>
-                <p className="text-sm text-green-400">
+                <p className="text-xs sm:text-sm text-green-400">
                   {formatFileSize(selectedFile.size)}
                 </p>
               </div>
@@ -122,7 +122,7 @@ export function FileUpload({
               size="sm"
               onClick={removeFile}
               disabled={isUploading}
-              className="text-green-400 hover:text-green-300 hover:bg-green-900/30"
+              className="text-green-400 hover:text-green-300 hover:bg-green-900/30 flex-shrink-0"
             >
               <X className="h-4 w-4" />
             </Button>

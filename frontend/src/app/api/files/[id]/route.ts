@@ -49,3 +49,46 @@ export async function GET(
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const { id } = await params;
+
+    // Verify the file belongs to the user
+    const file = await prisma.file.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (!file) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    // Delete the file record (Cascade will automatically delete related ResumeData and ResumeHistory)
+    await prisma.file.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "File deleted successfully",
+    });
+  } catch (error: unknown) {
+    console.error("Delete file error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}

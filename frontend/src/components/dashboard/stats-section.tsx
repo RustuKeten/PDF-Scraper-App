@@ -18,10 +18,10 @@ export function StatsSection({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-black mb-2">
+        <h2 className="text-xl sm:text-2xl font-bold text-card-foreground mb-2">
           Dashboard Overview
         </h2>
-        <p className="text-black">
+        <p className="text-sm sm:text-base text-card-foreground">
           Track your PDF processing activity and account status
         </p>
       </div>

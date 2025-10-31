@@ -10,6 +10,8 @@ import { StatsSection } from "@/components/dashboard/stats-section";
 import { UploadSection } from "@/components/dashboard/upload-section";
 import { FilesSection } from "@/components/dashboard/files-section";
 import { ResumeModal } from "@/components/dashboard/resume-modal";
+import { DeleteConfirmModal } from "@/components/dashboard/delete-confirm-modal";
+import { Footer } from "@/components/footer";
 import toast from "react-hot-toast";
 import { Brain, Zap } from "lucide-react";
 
@@ -32,6 +34,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [resumeData, setResumeData] = useState<any>(null);
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch user data on mount
   useEffect(() => {
@@ -133,9 +137,44 @@ export default function DashboardPage() {
     setResumeData(null);
   };
 
+  const handleFileDelete = (fileId: string) => {
+    setFileToDelete(fileId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!fileToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/files/${fileToDelete}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete file");
+      }
+
+      toast.success("File deleted successfully");
+      await fetchFiles(); // Refresh the files list
+      setFileToDelete(null); // Close modal
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error.message || "Failed to delete file");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    if (!isDeleting) {
+      setFileToDelete(null);
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
@@ -146,19 +185,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
 
       {/* AI Processing Info - Top Section */}
-      <div className="bg-gradient-to-r from-purple-100 to-blue-100 border-b border-purple-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-start space-x-3">
-            <div className="flex items-center space-x-2">
-              <Brain className="h-6 w-6 text-purple-600" />
-              <Zap className="h-5 w-5 text-yellow-600" />
+      <div className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 border-b border-purple-300 dark:border-purple-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="flex items-start space-x-2 sm:space-x-3">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+              <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
             </div>
             <div>
-              <h4 className="font-semibold text-black text-lg">
+              <h4 className="font-semibold text-black dark:text-white text-base sm:text-lg">
                 AI-Powered PDF Extraction
               </h4>
             </div>
@@ -166,18 +205,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <div className="space-y-8">
           {/* Welcome Header */}
-          <div className="text-center bg-gray-900 rounded-lg shadow-lg border border-gray-700 p-6">
-            <h1 className="text-3xl font-bold text-white mb-2">
+          <div className="text-center bg-card rounded-lg shadow-lg border border-border p-4 sm:p-6">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-card-foreground mb-2 break-words">
               Welcome back, {session.user?.name || session.user?.email}!
             </h1>
-            <p className="text-white">
-              <p className="text-m">
-                Our advanced AI analyzes your PDF and extracts structured data
-                automatically
-              </p>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Our advanced AI analyzes your PDF and extracts structured data
+              automatically
             </p>
           </div>
 
@@ -199,6 +236,7 @@ export default function DashboardPage() {
             files={files}
             loading={loading}
             onViewResumeData={handleViewResumeData}
+            onFileDelete={handleFileDelete}
           />
         </div>
       </main>
@@ -214,6 +252,22 @@ export default function DashboardPage() {
             : undefined
         }
       />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!fileToDelete}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        fileName={
+          fileToDelete
+            ? files.find((f) => f.id === fileToDelete)?.fileName ||
+              "Unknown file"
+            : ""
+        }
+        isDeleting={isDeleting}
+      />
+
+      <Footer />
     </div>
   );
 }

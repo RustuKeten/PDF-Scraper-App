@@ -30,7 +30,7 @@ function AuthErrorContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-4">
@@ -59,10 +59,10 @@ export default function AuthErrorPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center">
-            <div className="animate-spin rounded-full border-2 border-gray-300 border-t-gray-900 h-8 w-8 mx-auto mb-4"></div>
-            <p>Loading...</p>
+            <div className="animate-spin rounded-full border-2 border-muted border-t-foreground h-8 w-8 mx-auto mb-4"></div>
+            <p className="text-foreground">Loading...</p>
           </div>
         </div>
       }
